@@ -1,1 +1,19 @@
+# this is the base class for products in the store
+class Product: 
+    def __init__(self, product_id, name, price, category):
+        self.product_id = product_id
+        self.name = name
+        self.price = price 
+        self.category = category
 
+    @property
+    def price(self):
+        return self._price
+
+    def __str__(self):
+        return f"{self.name} ({self.category}) - ${self._price:.2f}"
+
+# subclass for electronics with discounts
+class Electronics(Product):
+    def calculate_discount(self):
+        return 0.10  # 10% discount
