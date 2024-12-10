@@ -17,3 +17,38 @@ class Electronics(Product):
     # subclass for electronics with potential discounts
     def calculate_discount(self):
         return 0.10  # electronics have a 10% discount
+
+class ShoppingCart:
+    # class to manage shopping cart
+    def __init__(self):
+        self.contents = {}  # stores the product details with quantities
+
+    def add_product(self, product, quantity=1):
+        if quantity <= 0:
+            print("Quantity must be positive")
+            return
+        if product.product_id in self.contents:
+            self.contents[product.product_id]['quantity'] += quantity
+        else:
+            self.contents[product.product_id] = {
+                'product': product,
+                'quantity': quantity
+            }
+
+    def remove_product(self, product_id, quantity=1):
+        if quantity <= 0:  # an input validation for negative quantities
+            print("Quantity must be positive")
+            return
+        if product_id in self.contents:
+            if self.contents[product_id]['quantity'] > quantity:
+                self.contents[product_id]['quantity'] -= quantity
+            else:
+                del self.contents[product_id]
+
+    def calculate_total(self):
+        total = 0
+        for item in self.contents.values():
+            product = item['product']
+            quantity = item['quantity']
+            total += product.price * quantity  # doesn't account for discounts
+        return total
