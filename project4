@@ -58,3 +58,23 @@ class ShoppingCart:
             discount = product.price * product.get_discount()  # uses the get_discount method
             total += (product.price - discount) * quantity
         return total
+
+    def calculate_tax(self):
+        # calculates tax at a fixed rate of 6%
+        return self.calculate_total() * 0.06
+
+    def print_receipt(self):
+        # prints the receipt with item details, discounts, subtotal, and total
+        print("\n===== Receipt =====")
+        for item in self.contents.values():
+            product = item['product']
+            quantity = item['quantity']
+            discount = product.price * product.get_discount()  # calculates discount
+            subtotal = (product.price - discount) * quantity  # applies discount to each item
+            print(f"{product.name} (x{quantity}) - ${subtotal}")
+        subtotal = self.calculate_total()
+        tax = self.calculate_tax()
+        print(f"Subtotal: ${subtotal}")
+        print(f"Tax (6%): ${tax}")
+        print(f"Total: ${subtotal + tax}")
+        print("===================")
