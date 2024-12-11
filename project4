@@ -13,10 +13,13 @@ class Product:
     def get_discount(self):
         return 0  # base products have no discount
 
-class Electronics(Product):
-    # subclass for electronics with potential discounts
-    def get_discount(self):
-        return 0.10 # electronics have a 10% discount
+class Candy(Product):
+    # subclass for candies with a bulk discount
+    def get_bulk_discount(self, quantity):
+        # 20% discount for 10 or more candies
+        if quantity >= 10:
+            return 0.20
+        return 0
 
 class ShoppingCart:
     # class to manage shopping cart operations
@@ -55,7 +58,9 @@ class ShoppingCart:
         for item in self.contents.values():
             product = item['product']
             quantity = item['quantity']
-            discount = product.price * product.get_discount()  # uses the get_discount method
+            discount = 0
+            if isinstance(product, Candy):
+                discount = product.price * product.get_bulk_discount(quantity)
             total += (product.price - discount) * quantity
         return total
 
@@ -65,16 +70,113 @@ class ShoppingCart:
 
     def print_receipt(self):
         # prints the receipt with item details, discounts, subtotal, and total
-        print("\n===== Receipt =====")
+        print("\n=-=-= Receipt =-=-=")
         for item in self.contents.values():
             product = item['product']
             quantity = item['quantity']
-            discount = product.price * product.get_discount()  # calculates discount
-            subtotal = (product.price - discount) * quantity  # applies discount to each item
+            discount = 0
+            if isinstance(product, Candy):
+                discount = product.price * product.get_bulk_discount(quantity)
+            subtotal = (product.price - discount) * quantity  # applies bulk discount if applicable
             print(f"{product.name} (x{quantity}) - ${subtotal}")
         subtotal = self.calculate_total()
         tax = self.calculate_tax()
         print(f"Subtotal: ${subtotal}")
-        print(f"Tax (6%): ${tax}")
+        print(f"Sales tax (6%): ${tax}")
         print(f"Total: ${subtotal + tax}")
-        print("===================")
+        print("=-=-=-=-=-=-=-=-=-=")
+
+class Order:
+    # class to handle order processing and checkout
+    def __init__(self, cart):
+        self.cart = cart  # assigns the shopping cart to the order
+
+    def checkout(self):# prints the receipt and confirms the order
+        print("Now processing order...")
+        self.cart.print_receipt()
+        confirm = input("Do you want to complete your purchase? (yes/no): ").strip().lower()
+        if confirm == "yes":
+            payment = input("Enter 'purchase' to confirm payment: ").strip().lower()
+            if payment == "purchase":
+                self.cart.contents.clear()  # clears the cart after user confirms
+                print("Thank you for your purchase!")
+            else:
+                print("Purchase not completed. Your order has been canceled.")
+        else:
+            print("Your order has been canceled.")
+
+def menu():
+    # main function displays the menu and allow user interaction
+    cart = ShoppingCart()  # creates a new shopping cart instance
+    products = {
+        # stores the product IDs linked to candy products
+        1: Candy(product_id=1, name="Sour Patch Kids", price=2.50, category="Candy"),
+        2: Candy(product_id=2, name="Hersheys Chocolate", price=1.50, category="Candy"),
+        3: Candy(product_id=3, name="Skittles", price=1.00, category="Candy"),
+        4: Candy(product_id=4, name="Nerds", price=1.25, category="Candy"),
+        5: Candy(product_id=5, name="M&M's", price=1.75, category="Candy")
+    }
+
+    while True:
+        # displays the main menu options
+        print("\nWelcome to TERP's Candy Store!")
+        print("1. View Candies")
+        print("2. Add Candy to Cart")
+        print("3. Remove Candy from Cart")
+        print("4. View Cart")
+        print("5. Checkout")
+        print("6. Exit")
+
+        choice = input("Choose an option: ").strip()
+
+        if choice == "1":
+            # displays all the available products
+            print("\nAvailable Candies:")
+            for key, product in products.items():
+                print(f"{key}. {product.name} - ${product.price}")
+
+        elif choice == "2":
+            # allows user to add a product to the cart
+            try:
+                product_id = int(input("Enter the product number to add: ").strip())
+                quantity = int(input("Enter the quantity: ").strip())
+                if product_id in products:
+                    cart.add_product(products[product_id], quantity)
+                    print(f"Added {quantity} of {products[product_id].name} to the cart.")
+                else:
+                    print("Invalid product number.")
+            except ValueError:
+                print("Please enter valid numbers.")
+
+        elif choice == "3":
+            # allows user to remove a product from the cart
+            try:
+                product_id = int(input("Enter the product number to remove: ").strip())
+                quantity = int(input("Enter the quantity to remove: ").strip())
+                cart.remove_product(product_id, quantity)
+                print(f"Removed {quantity} of product ID {product_id} from the cart.")
+            except ValueError:
+                print("Please enter valid numbers.")
+
+        elif choice == "4":
+            # display the current cart contents
+            print("\nYour Cart:")
+            cart.print_receipt()
+
+        elif choice == "5":
+            # goes to checkout
+            order = Order(cart)
+            order.checkout()
+            break
+
+        elif choice == "6":
+            # exits the program
+            print("Thank you for visiting TERP's Candy Store. Goodbye!")
+            break
+
+        else:
+            # handles invalid choice menu
+            print("Invalid choice. Please try again.")
+            
+if __name__ == "__main__":
+    menu()
