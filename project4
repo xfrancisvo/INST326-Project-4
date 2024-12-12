@@ -43,7 +43,7 @@ class ShoppingCart:
             print(f"Added {quantity} of {product.name} to the cart.")
 
     def edit_cart(self, product, quantity):
-        # modifies the quantity of products in the cart
+        # modifies the quantity of candies in the cart
         if product.product_id in self.contents:
             new_quantity = self.contents[product.product_id]['quantity'] + quantity
             if new_quantity > 0:
@@ -63,13 +63,24 @@ class ShoppingCart:
             quantity = item['quantity']
             discount = 0
             if isinstance(product, Candy):
-                discount = product.price * product.get_bulk_discount(quantity)
-            total += (product.price - discount) * quantity
+                discount = product.get_bulk_discount(quantity)
+            total += product.price * (1 - discount) * quantity
         return total
 
-    def calculate_tax(self):
+    def calculate_discount(self):
+        # Calculates the total discount for the cart
+        total_discount = 0
+        for item in self.contents.values():
+            product = item['product']
+            quantity = item['quantity']
+            if isinstance(product, Candy):
+                discount = product.get_bulk_discount(quantity)
+                total_discount += product.price * discount * quantity
+        return total_discount
+
+    def calculate_tax(self, subtotal):
         # calculates tax at a fixed rate of 6%
-        return self.calculate_total() * 0.06
+        return subtotal * 0.06
 
     def print_receipt(self):
         # prints the receipt with item details, discounts, subtotal, and total
@@ -79,14 +90,18 @@ class ShoppingCart:
             quantity = item['quantity']
             discount = 0
             if isinstance(product, Candy):
-                discount = product.price * product.get_bulk_discount(quantity)
-            subtotal = (product.price - discount) * quantity  # applies bulk discount if applicable
-            print(f"{product.name} (x{quantity}) - ${subtotal}")
+                discount = product.get_bulk_discount(quantity)
+            subtotal = product.price * (1 - discount) * quantity  # applies bulk discount if applicable
+            print(f"{product.name} (x{quantity}) - ${subtotal:.2f}")
         subtotal = self.calculate_total()
-        tax = self.calculate_tax()
-        print(f"Subtotal: ${subtotal}")
-        print(f"Sales tax (6%): ${tax}")
-        print(f"Total: ${subtotal + tax}")
+        discount = self.calculate_discount()
+        tax = self.calculate_tax(subtotal - discount)
+        total = subtotal - discount + tax
+        print("-------------------")
+        print(f"Subtotal: ${subtotal:.2f}")
+        print(f"Discount (20%): -${discount:.2f}")
+        print(f"Sales tax (6%): ${tax:.2f}")
+        print(f"Total: ${total:.2f}")
         print("=-=-=-=-=-=-=-=-=-=")
 
 class Order:
@@ -94,19 +109,23 @@ class Order:
     def __init__(self, cart):
         self.cart = cart  # assigns the shopping cart to the order
 
-    def checkout(self):# prints the receipt and confirms the order
-        print("Now processing order...")
-        self.cart.print_receipt()
-        confirm = input("Do you want to complete your purchase? (yes/no): ").strip().lower()
-        if confirm == "yes":
-            payment = input("Enter 'purchase' to confirm payment: ").strip().lower()
-            if payment == "purchase":
-                self.cart.contents.clear()  # clears the cart after user confirms
-                print("Thank you for your purchase!")
+    def checkout(self):
+        # prints the receipt and confirms the order
+        while True:
+            print("Now processing order...")
+            self.cart.print_receipt()
+            confirm = input("Do you want to complete your purchase? (yes/no): ").strip().lower()
+            if confirm == "yes":
+                payment = input("Enter 'purchase' to confirm payment: ").strip().lower()
+                if payment == "purchase":
+                    self.cart.contents.clear()  # clears the cart after user confirms
+                    print("Thank you for your purchase!")
+                break
+            elif confirm == "no":
+                print("Returning to menu...")
+                return  # exits checkout and returns to menu
             else:
-                print("Purchase not completed. Your order has been canceled.")
-        else:
-            print("Your order has been canceled.")
+                print("Invalid input. Please enter 'yes' or 'no'.")
 
 def menu():
     # main function displays the menu and allows user interaction
@@ -119,26 +138,22 @@ def menu():
         5: Candy(product_id=5, name="M&M's", price=1.75, category="Candy")
     }
 
-    while True:
-        # displays the main menu options
-        print("\nWelcome to TERP's Candy Store!")
-        print("1. View Candies")
-        print("2. Add Candies to Cart")
-        print("3. Edit Cart")
-        print("4. View Cart")
-        print("5. Checkout")
-        print("6. Exit")
+    print("\nWelcome to TERP's Candy Store!")
+    print("Purchase 10 or more candies and get a 20% discount!")
+    print("1. Add Candies to Cart")
+    print("2. Edit Cart")
+    print("3. View Cart")
+    print("4. Checkout")
+    print("5. Exit")
 
+    while True:
         choice = input("Choose an option: ").strip()
 
         if choice == "1":
-            # displays all the available products
+            # displays all the available products and allows user to add candies to the cart
             print("\nAvailable Candies:")
             for key, product in products.items():
-                print(f"{key}. {product.name} - ${product.price}")
-
-        elif choice == "2":
-            # allows user to add candies to the cart
+                print(f"{key}. {product.name} - ${product.price:.2f}")
             try:
                 product_id = int(input("Enter the product number to add: ").strip())
                 if product_id in products:
@@ -149,7 +164,7 @@ def menu():
             except ValueError:
                 print("Please enter valid numbers.")
 
-        elif choice == "3":
+        elif choice == "2":
             # allows user to edit the cart
             try:
                 product_id = int(input("Enter the product number to edit: ").strip())
@@ -161,25 +176,21 @@ def menu():
             except ValueError:
                 print("Please enter valid numbers.")
 
-        elif choice == "4":
-            # display the current cart contents
+        elif choice == "3":
+            # displays the users current cart
             print("\nYour Cart:")
             cart.print_receipt()
 
-        elif choice == "5":
+        elif choice == "4":
             # goes to checkout
             order = Order(cart)
             order.checkout()
-            break
 
-        elif choice == "6":
+        elif choice == "5":
             # exits the program
             print("Thank you for visiting TERP's Candy Store. Goodbye!")
-            break
-
-        else:
-            # handles invalid choice menu
-            print("Invalid choice. Please try again.")
+                
+        break  # stops the loop and exits the program
 
 if __name__ == "__main__":
     menu()
